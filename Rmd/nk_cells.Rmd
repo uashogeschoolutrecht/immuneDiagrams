@@ -1,0 +1,255 @@
+---
+title: "NK Cells"
+author: "Marc A.T. Teunis"
+date: "11/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Packages
+```{r}
+library(tidyverse)
+library(gramlyr)
+library(toolboxr)
+library(readxl)
+library(naniar)
+```
+
+## Data
+```{r}
+data_nk <- read_xlsx(
+  here::here(
+    "data-raw",
+    "D090",
+    "NK data voor mastersheet.xlsx"
+  ), na = "NA"
+)
+
+cytokines_avans <- read_xls(
+  here::here(
+    "data-raw",
+    "D091",
+    "Tidy format cytokinen_AVANS.xls"
+    ), na = "NA"
+  )
+
+
+```
+
+## Inspect
+```{r}
+map(data_nk, typeof)
+names(data_nk)
+sum(is.na(data_nk))
+
+map(cytokines_avans, typeof)
+names(cytokines_avans)
+sum(is.na(cytokines_avans))
+```
+
+## Data Clean
+
+Observations for ID2 and protocol 4 are invalid!!!
+
+ - used , instead of .
+ - % in value
+
+```{r}
+## data_nk
+data_nk_clean <- data_nk %>%
+  dplyr::filter(Subject != 2, Protocol != 4)
+
+data_nk_clean[, -c(1:9, 29)] <- map(data_nk_clean[, -c(1:9, 29)],
+                                as.numeric)
+names(data_nk_clean) <- names(data_nk_clean) %>%
+  tolower() %>%
+  str_replace_all(pattern = "/", replacement = "_")
+
+data_names <- names(data_nk_clean) %>% enframe()
+
+## cytokines_avans
+cytokines_avans_tidy <- cytokines_avans %>%
+  dplyr::select(Subject:`TNFα`) %>%
+  tidyr::gather(
+    MIF:TNFα,
+    key = "cytokine",
+    value = "value"
+  ) %>%
+  mutate(value_num = as.numeric(value))
+
+
+names(cytokines_avans_tidy) <- names(cytokines_avans_tidy) %>%
+  tolower()
+
+
+
+
+
+
+```
+
+## Missing 
+```{r}
+naniar::vis_miss(data_nk)
+sum(is.na(data_nk_clean))
+naniar::vis_miss(data_nk_clean)
+
+naniar::vis_miss(cytokines_avans_tidy)
+sum(is.na(cytokines_avans_tidy))
+
+```
+
+# NK Cells
+
+## Total percentage NK - all data
+```{r}
+data_nk_clean %>%
+  dplyr::select(perctotalnk, time, subject, protocol) %>%
+  ggplot(aes(x = subject,
+             y = perctotalnk)) +
+  geom_point(aes(colour = protocol)) +
+  facet_wrap(~time)
+
+```
+
+## CD57d/CD16
+
+d = dim -> inflammation
+b = bright -> cytokine producing NK
+
+## Bright / Dim separated
+
+### Function to plot
+```{r}
+#' @title Function that plots specific flow cytometric subsets for NK cells
+#'
+
+## dummies
+#data = data_nk_clean
+#analyte = "perccd16d_cd56bnk"
+
+plot_population_percentage <- function(data, analyte){
+
+plot <- data %>%
+#  dplyr::select(get(analyte), time, subject, protocol) %>%
+  group_by(protocol, time) %>%
+  summarise(mean_total_pop = mean(get(analyte), na.rm = TRUE)) %>%
+  ggplot(aes(x = time,
+             y = mean_total_pop)) +
+#  geom_point(aes(group = protocol, colour = protocol)) +
+  geom_line(aes(group = protocol, colour = protocol)) +
+  geom_point(data = data_nk_clean, aes(x = time, y = get(analyte), colour = protocol), position = "jitter") +
+  ggtitle(analyte)
+
+  return(plot)
+}
+
+```
+
+### All percentages
+```{r}
+percentages_list <- list(
+  data_names[13,2] %>% as.character(),
+  data_names[17,2] %>% as.character(),
+  data_names[21,2] %>% as.character()
+)
+
+names
+
+map(
+  percentages_list,
+  data = data_nk_clean,
+  plot_population_percentage)
+
+```
+
+# Cytokines 
+
+## All data
+```{r}
+cytokines_avans_tidy %>%
+  ggplot(aes(x = as.character(subject),
+             y = value_num)) + 
+  geom_point(aes(colour = protocol), position = "jitter") +
+  facet_wrap(~cytokine)
+
+## log 10 for try
+cytokines_avans_tidy %>%
+  ggplot(aes(x = as.character(subject),
+             y = log10(value_num))) + 
+  geom_point(aes(colour = protocol), position = "jitter") +
+  facet_wrap(~ cytokine)
+
+```
+
+## Histograms and boxplots
+```{r}
+cytokines_avans_tidy %>%
+  ggplot(aes(x = log10(value_num))) + 
+  geom_density() +
+  facet_wrap(~cytokine)
+
+cytokines_avans_tidy %>%
+  ggplot(aes(x = cytokine,
+             y = value_num)) + 
+  geom_boxplot(aes(colour = protocol))
+
+```
+
+## Summary per cytokine
+```{r}
+
+nested_cytokines <- cytokines_avans_tidy %>%
+  group_by(cytokine, protocol, time) %>%
+  summarise(mean_value = mean(value_num, na.rm = TRUE),
+            sd = sd(value_num, na.rm = TRUE),
+            n = n()) %>% 
+  group_by(cytokine) %>%
+  nest()
+
+names(nested_cytokines$data) <- nested_cytokines$cytokine
+
+## plot one cytokine
+## dummies
+df = nested_cytokines$data[[1]]
+
+plot_cytokine <- function(df, analyte, ...){
+  
+  plot <- df %>%
+    ggplot(aes(x = as.character(time),
+               y = mean_value)) +
+    geom_point(aes(group = protocol, colour = protocol), ...) +
+    ggtitle(analyte) +
+    geom_line(aes(group = protocol, colour = protocol)) +
+    ylim(
+      c(min(df$mean_value/2), max(df$mean_value))
+      )
+
+  table <- knitr::kable(df)
+  
+    return(list(plot, table))
+  
+} 
+
+## test
+#plot_cytokine(df = df, analyte = nested_cytokines$cytokine[[1]]) +
+#  geom_line(aes(group = protocol, colour = protocol))
+
+## all cytokines
+map2(
+  .x = nested_cytokines$data,
+  .y = nested_cytokines$cytokine,
+  .f = plot_cytokine
+)
+
+
+```
+
+
+
+
+
+
