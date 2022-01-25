@@ -19,6 +19,7 @@ library(kinetics)
 library(immuneGrinta)
 library(cowplot)
 library(svglite)
+library(gramlyr)
 ```
 
 ## Load data for analytes
@@ -60,6 +61,7 @@ levels(data_summary$analyte)
 
 data_split <- split(data_summary, 
                         droplevels(data_summary$analyte))
+
 ```
 
 ### Load analyte annotations
@@ -114,12 +116,22 @@ immuneGrinta::print_lines_panel(analytes[4], x_pos = c(1,3))
 ## generate plotlist
 analytes_figs <- c(
         
+  "BASO_ABS",
+  "LEUCO",
+  "TROMBO",
+  "EOS_ABS",
   "LYMFO_ABS_CORR",
   "MONO_ABS",
   "NEUTRO_ABS",
-  "EOS_ABS",
-  "BASO_ABS",
-  "TROMBO"
+  "mcp1",
+  "ip10",
+  "tnf",
+  "il6",
+  "il10",
+  "ifny",
+  "gcsf",
+  "mif"
+  
 )
 
 analyte_data <- data_summary %>%
@@ -127,25 +139,6 @@ analyte_data <- data_summary %>%
   droplevels()
 
 levels(analyte_data$analyte)
-
-
-# 
-# x_pos_list <- list(
-#    = c(1,3),
-#   "bicarb" = c(1,3),
-#   "chloride" = c(1,3),
-#   "ery" = c(1,3),
-#   "glu_ns" = c(1,2), ## the GLU_NS set has less time points
-#   "hb" = c(1,3),
-#   "ht" = c(1,3),
-#   "insuline" = c(1,3), 
-#   "kreat" = c(1,3),
-#   "leuco" = c(1,3),
-#   "potassium" = c(1,3),
-#   "sodium" = c(1,3)
-# )
-# x_pos_list
-# 
 
 panel_plot_list <- map(
   .x = levels(analyte_data$analyte), 
@@ -171,12 +164,12 @@ names(panel_plot_list)
 
 ## names(panel_plot_list) <- analytes_figs
 
-p1_a <- panel_plot_list[[analytes_figs[1]]]
-p1_b <- panel_plot_list[[analytes_figs[2]]]
-p1_c <- panel_plot_list[[analytes_figs[3]]]
-p1_e <- panel_plot_list[[analytes_figs[4]]]
-p1_d <- panel_plot_list[[analytes_figs[5]]]
-p1_f <- panel_plot_list[[analytes_figs[6]]]
+p1_a <- panel_plot_list[["LYMFO_ABS_CORR"]]
+p1_b <- panel_plot_list[["MONO_ABS"]]
+p1_c <- panel_plot_list[["NEUTRO_ABS"]]
+p1_d <- panel_plot_list[["EOS_ABS"]]
+p1_e <- panel_plot_list[["BASO_ABS"]]
+p1_f <- panel_plot_list[["TROMBO"]]
 
 ## dimensions
 height <- 28
@@ -240,3 +233,103 @@ ggsave(p_1, filename = file.path(
 
 
 ```
+
+### Figure 2
+
+```{r}
+
+```
+
+
+### Figure 3
+a) MCP1
+b) Ip10
+c) TNf
+```{r}
+## names(panel_plot_list) <- analytes_figs
+
+p3_a <- panel_plot_list[["mcp1"]] + 
+  ggtitle("MCP-1") +
+  ylab("Conc. (pg/ml)")
+p3_b <- panel_plot_list[["ip10"]] + 
+  ggtitle("IP-10") +
+  ylab("Conc. (pg/ml)")
+p3_c <- panel_plot_list[["tnf"]] + 
+  ggtitle("TNF-alpha") +
+  ylab("Conc. (pg/ml)")
+
+## dimensions
+height <- 10
+width <- 24
+resolution <- 600
+
+# https://cran.r-project.org/web/packages/cowplot/vignettes/shared_legends.html
+
+horizontal_label_offset <- -7
+vertical_label_offset <- 4
+label_size <- 20
+
+figure_3 <- cowplot::plot_grid(p3_a + theme(legend.position="none"),
+           p3_b + theme(legend.position="none"),
+           p3_c + theme(legend.position="none"),
+           align = 'vh',
+           labels = c("A", "B", "C"),
+           hjust = horizontal_label_offset, 
+           vjust = vertical_label_offset,
+           nrow = 1,
+           label_size = label_size
+           )
+
+#cfigure_1
+
+
+legend_3 <- get_legend(p3_a + theme(legend.position="top"))
+
+p_3 <- plot_grid(legend_3, figure_3, nrow = 2, 
+                 rel_heights = c(0.1, 1)
+                # rel_widths = c(0.02, 1.4)
+                 )
+p_3
+
+
+##kinetics::save_in_image_directory(filename = "test2.svg", height = 26, width = 7)
+ggsave(p_3, filename = file.path(
+    params$path_out,
+                         paste(Sys.Date(),
+                         "fig_3.svg", sep = "_")), 
+       height = height/2.2, 
+       width = width/1.5, 
+       dpi = resolution/2)
+
+ggsave(p_3, filename = file.path(
+    params$path_out,
+                         paste(Sys.Date(),
+                         "fig_3.png", sep = "_")), 
+       height = height/2.2, 
+       width = width/1.5, 
+       dpi = resolution/2)
+
+
+ggsave(p_3, filename = file.path(
+    params$path_out,
+                         paste(Sys.Date(),
+                         "fig_3.jpeg", sep = "_")), 
+       height = height/2.2, 
+       width = width/1.5, 
+       dpi = resolution/2)
+
+```
+
+
+
+### Figure 4
+a) IL-6
+b) IL-10
+c) IFN-g
+d) G-CSF
+e) MIF
+
+
+
+
+
