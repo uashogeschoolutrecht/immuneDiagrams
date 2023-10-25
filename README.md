@@ -1,4 +1,4 @@
-# immune_diagrams R data and code package
+# immuneDiagrams R data and code package
 
 ## Scope
 This R package contains code and data for reproducing the analysis and figures in the publication:
@@ -13,7 +13,8 @@ Run the following code in R to install the `{immune_diagrams}` package:
 
 ```
 install.packages("pak")
-pak::pkg_install("uashogeschoolutrecht/immune_diagrams")
+pak::pkg_install("uashogeschoolutrecht/kinetics")
+pak::pkg_install("uashogeschoolutrecht/immuneDiagrams")
 ```
 
 or run in a terminal:
@@ -26,6 +27,7 @@ and in R
 
 ```
 install.packages("pak")
+pak::pkg_install("uashogeschoolutrecht/kinetics")
 pak::local_install()
 ```
 This last step will install the package locally from the github clone.
