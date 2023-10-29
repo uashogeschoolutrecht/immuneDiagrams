@@ -3,6 +3,9 @@
 
 print_lines_panel <- function(analyte, ...){
 
+
+
+
   ymax_data <- max(data_split[[analyte]]$mean_conc)
   sem_max <- max(data_split[[analyte]]$sd)
   ymax <- 1.05*(ymax_data)

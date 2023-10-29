@@ -1,11 +1,11 @@
-Package: immuneGrinta
+Package: immunogram
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Marc",
+           family = "Teunis",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
+           email = "marc.teunis@hu.nl",
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
 License: CC BY 4.0
@@ -14,6 +14,8 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Imports: 
+    dplyr,
+    ggplot2,
     here,
     magrittr,
     readr,
@@ -21,10 +23,8 @@ Imports:
 Depends: 
     R (>= 2.10)
 Suggests:
-    dplyr,
     tidyr,
     purrr,
-    ggplot2,
     knitr,
     rmarkdown
 VignetteBuilder: knitr
